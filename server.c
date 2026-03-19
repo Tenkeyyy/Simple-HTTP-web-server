@@ -1,4 +1,7 @@
 #include "lib.h"
+#include <signal.h>
+#include <string.h>
+#include <sys/wait.h>
 
 int parse_uri(char *uri, char *filename, char *cgiargs);
 void doit(int fd);
@@ -7,10 +10,12 @@ void serve_static(int fd, char *filename, int filesize);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
+void sigchld_handler(int sig);
 
 int main(int argc, char **argv){
 	int listenfd, connfd, port, clientlen;
 	struct sockaddr_in clientaddr;
+	signal(SIGCHLD,sigchld_handler);
 
 	if (argc != 2) {
 		exit(1);
@@ -44,6 +49,7 @@ void doit(int fd){
 		clienterror(fd, method, "501", "Not Implemented", "does not implement this method");
 		return ;
 	}
+	printf("%s\n",buf);
 	read_requesthdrs(&rio);
 
 	is_static = parse_uri(uri, filename, cgiargs);
@@ -152,6 +158,8 @@ void get_filetype(char *filename, char *filetype){
 		strcpy(filetype, "image/gif");
 	else if(strstr(filename, ".jpg"))
 		strcpy(filetype, "image/jpg");
+	else if(strstr(filename, ".mpg"))
+		strcpy(filetype, "video/mpg");
 	else
 		strcpy(filetype, "text/plain");
 }
@@ -169,6 +177,13 @@ void serve_dynamic(int fd, char *filename, char *cgiargs){
 		dup2(fd, STDOUT_FILENO);
 		execve(filename, emptylist, environ);
 	}
-	wait(NULL);
 
+}
+void sigchld_handler(int sig){
+	pid_t pid ;
+	wait(NULL);
+	if(errno != ECHILD){
+		fprintf(stderr,"workpid error: %s\n", strerror(errno));
+		exit(0);
+	}
 }
