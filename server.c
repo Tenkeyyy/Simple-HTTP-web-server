@@ -1,4 +1,4 @@
-#include "csapp.h"
+#include "lib.h"
 
 int parse_uri(char *uri, char *filename, char *cgiargs);
 void doit(int fd);
