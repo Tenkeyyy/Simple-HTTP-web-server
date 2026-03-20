@@ -1,6 +1,6 @@
 #include "lib.h"
 
-void sigchld_handler(int sig){
+static void sigchld_handler(int sig){
 	pid_t pid ;
 	wait(NULL);
 	if(errno != ECHILD){
